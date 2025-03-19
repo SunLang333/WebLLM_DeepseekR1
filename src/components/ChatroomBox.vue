@@ -19,11 +19,10 @@
         class="flex items-center justify-between px-3 py-2 border-t dark:border-gray-600 border-gray-200"
       >
         <button
-          @click="$emit('submit', this.message)"
           type="submit"
           class="inline-flex items-center py-2.5 px-4 text-xs font-medium text-center text-white bg-blue-700 rounded-lg focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900 hover:bg-blue-800"
         >
-          Post comment
+          Send
         </button>
       </div>
     </div>
@@ -35,12 +34,22 @@ export default {
   data() {
     return {
       message: '',
+      history: {}, // added history dictionary
     }
   },
   methods: {
     sendMessage() {
-      console.log(this.message)
-      this.$emit('submit', this.message)
+      // Append message to history with a timestamp key
+      const key = new Date().toISOString()
+      this.history[key] = this.message
+
+      console.log(this.message) // log the message in console
+
+      // Emit an object containing both the current message and the history
+      this.$emit('submit', { message: this.message, history: this.history })
+
+      // Optionally, clear the message input after sending
+      this.message = ''
     },
   },
 }
