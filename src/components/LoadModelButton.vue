@@ -19,9 +19,10 @@ const loadModel = async () => {
   try {
     modelPipeline = await pipeline(
       'text-generation',
-      'onnx-community/DeepSeek-R1-Distill-Qwen-1.5B-ONNX',
+      'Xenova/distilgpt2',
+      //'onnx-community/DeepSeek-R1-Distill-Qwen-1.5B-ONNX',
+      //'Xenova/Phi-3-mini-4k-instruct',
       {
-        // Uncomment the line below if you need to load model files locally
         // local_files_only: true,
       },
     )
@@ -33,6 +34,28 @@ const loadModel = async () => {
     isLoading.value = false
   }
 }
+
+async function generateText(prompt) {
+  if (!modelPipeline) {
+    console.error('Model pipeline is not initialized.')
+    return 'Model not loaded'
+  }
+  // Build a template string around the prompt. For example:
+  const templatedPrompt = `Please generate a creative response based on the following text:\n\n"${prompt}"\n\nResponse:`
+
+  // Wait for the pipeline to return generated text using the templated prompt
+  const results = await modelPipeline(templatedPrompt, {
+    max_length: 100,
+    do_sample: true,
+    temperature: 0.7,
+  })
+  // Extract the generated text from the first result
+  return results && results[0] && results[0].generated_text
+    ? results[0].generated_text
+    : 'No text generated'
+}
+
+defineExpose({ generateText, loadModel })
 </script>
 
 <style scoped>
