@@ -31,7 +31,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { pipeline } from '@huggingface/transformers'
+import { pipeline, env } from '@huggingface/transformers'
+
+//env.allowLocalModels = true
 
 // 响应式数据
 const inputText = ref('Once upon a time,')
@@ -44,8 +46,9 @@ let generator = null
 onMounted(async () => {
   try {
     // 初始化模型 [6](@ref)
-    generator = await pipeline('text-generation', 'Xenova/distilgpt2', {
+    generator = await pipeline('text-generation', '@Xenova/distilgpt2/', {
       progress_callback: () => (loading.value = false),
+      //local_files_only: true,
     })
   } catch (error) {
     console.error('Model loading failed:', error)
