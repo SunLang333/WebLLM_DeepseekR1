@@ -3,40 +3,46 @@ import { ref } from 'vue'
 import ChatBubble from '@/components/ChatBubble.vue'
 import ChatroomBox from '@/components/ChatroomBox.vue'
 import StreamContainer from '@/components/StreamContainer.vue'
+import ProgressIndicator from '@/components/ProgressIndicator.vue'
 
 const chatHistory = ref([])
-// This holds the current prompt which will trigger streaming.
+// This holds the current prompt to trigger streaming.
 const currentPrompt = ref('')
-// This will temporarily hold the streaming output.
+// Will hold the streaming results.
 const currentStream = ref('')
-// This will hold the index of the bot message being updated.
+// Index of the bot message in the chat history.
 const currentBotIndex = ref(null)
 
-// Define the callback at top-level
+// Model loading progress state
+const loadingProgress = ref(0)
+const modelLoaded = ref(false)
+
+// Update progress from events emitted by StreamContainer.
+const updateLoadingProgress = (val) => {
+  loadingProgress.value = val
+}
+
+// Handle the model-loaded event.
+const handleModelLoaded = () => {
+  modelLoaded.value = true
+  loadingProgress.value = 100
+}
+
+// Callback for streaming updates.
 const onStreamUpdate = (partialText) => {
-  // Append the new partial text to the currentStream value.
   currentStream.value += partialText
-  // Update the correct chat bubble message if available.
   if (currentBotIndex.value !== null) {
     chatHistory.value[currentBotIndex.value].message = currentStream.value
   }
 }
 
-// Add message from ChatroomBox
+// Add a new chat message.
 const addMessage = (payload) => {
   if (payload.message && payload.message.trim() !== '') {
-    // User message sent.
     chatHistory.value.push({ user: 'You', message: payload.message })
-    // Add a placeholder for the bot response.
     chatHistory.value.push({ user: 'Bot', message: '' })
-    // Get the index for the bot message.
-    const botMsgIndex = chatHistory.value.length - 1
-    // Store the index so our streaming callback knows where to update.
-    currentBotIndex.value = botMsgIndex
-
-    // Set the current prompt. This prop will be passed to StreamContainer.
+    currentBotIndex.value = chatHistory.value.length - 1
     currentPrompt.value = payload.message
-    // Clear previous streaming output.
     currentStream.value = ''
   }
 }
@@ -44,12 +50,32 @@ const addMessage = (payload) => {
 
 <template>
   <div>
-    <!-- Pass the currentPrompt to StreamContainer and listen for updates. -->
-    <StreamContainer v-if="currentPrompt" :prompt="currentPrompt" @stream-update="onStreamUpdate" />
-    <!-- Render chat bubbles for each message -->
-    <div v-for="(chat, index) in chatHistory" :key="index">
-      <ChatBubble :message="chat.message" :user="chat.user" />
+    <!-- Always mount a hidden load-only StreamContainer to load the model on page open -->
+    <StreamContainer
+      load-only
+      @loading-progress="updateLoadingProgress"
+      @model-loaded="handleModelLoaded"
+    />
+
+    <!-- Show the progress indicator until the model is loaded -->
+    <div v-if="!modelLoaded">
+      <p>Loading model from huggingface... (doens't require connection if cached)</p>
+      <ProgressIndicator :ProgressPercentage="loadingProgress" />
     </div>
-    <ChatroomBox @submit="addMessage" />
+
+    <!-- Once loaded, show the chat UI -->
+    <div v-else>
+      <!-- When a prompt is present, mount a streaming container to process it -->
+      <StreamContainer
+        v-if="currentPrompt"
+        :prompt="currentPrompt"
+        @stream-update="onStreamUpdate"
+      />
+      <!-- Render chat bubbles -->
+      <div v-for="(chat, index) in chatHistory" :key="index">
+        <ChatBubble :message="chat.message" :user="chat.user" />
+      </div>
+      <ChatroomBox @submit="addMessage" />
+    </div>
   </div>
 </template>
