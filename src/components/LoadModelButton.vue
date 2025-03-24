@@ -6,7 +6,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { pipeline } from '@huggingface/transformers'
+import { pipeline, TextStreamer } from '@huggingface/transformers'
 
 const isLoading = ref(false)
 const modelLoaded = ref(false)
@@ -19,11 +19,10 @@ const loadModel = async () => {
   try {
     modelPipeline = await pipeline(
       'text-generation',
-      'Xenova/distilgpt2',
-      //'onnx-community/DeepSeek-R1-Distill-Qwen-1.5B-ONNX',
       //'Xenova/Phi-3-mini-4k-instruct',
+      'Xenova/distilgpt2',
       {
-        // local_files_only: true,
+        // additional options if needed
       },
     )
     modelLoaded.value = true
@@ -35,24 +34,36 @@ const loadModel = async () => {
   }
 }
 
-async function generateText(prompt) {
+async function generateText(prompt, onUpdate) {
   if (!modelPipeline) {
     console.error('Model pipeline is not initialized.')
     return 'Model not loaded'
   }
-  // Build a template string around the prompt. For example:
   const templatedPrompt = `Please generate a creative response based on the following text:\n\n"${prompt}"\n\nResponse:`
 
-  // Wait for the pipeline to return generated text using the templated prompt
-  const results = await modelPipeline(templatedPrompt, {
+  // Create an accumulator for partial text updates.
+  let accumulated = ''
+
+  // Create a new TextStreamer instance with a callback that appends to the accumulator.
+  const streamer = new TextStreamer(modelPipeline.tokenizer, {
+    skip_prompt: true,
+    callback_function: (partialText) => {
+      accumulated += partialText
+      if (typeof onUpdate === 'function') {
+        onUpdate(accumulated)
+      }
+    },
+  })
+
+  // Call the pipeline with the streaming option.
+  await modelPipeline(templatedPrompt, {
     max_length: 100,
     do_sample: true,
     temperature: 0.7,
+    streamer,
   })
-  // Extract the generated text from the first result
-  return results && results[0] && results[0].generated_text
-    ? results[0].generated_text
-    : 'No text generated'
+
+  return accumulated || 'No text generated'
 }
 
 defineExpose({ generateText, loadModel })

@@ -1,5 +1,4 @@
 <script setup>
-import ChatroomBox from '@/components/ChatroomBox.vue'
 import { pipeline, TextStreamer } from '@huggingface/transformers'
 
 // Create a text generation pipeline
@@ -8,7 +7,7 @@ const generator = await pipeline('text-generation', 'Xenova/Phi-3-mini-4k-instru
 })
 
 // Define the list of messages
-var messages = [{ role: 'user', content: 'Solve the equation: x^2 - 3x + 2 = 0' }]
+const messages = [{ role: 'user', content: 'Why is the sky blue?' }]
 
 // Create text streamer
 const streamer = new TextStreamer(generator.tokenizer, {
@@ -17,11 +16,6 @@ const streamer = new TextStreamer(generator.tokenizer, {
 })
 
 // Generate a response
-//var output = await generator(messages, { max_new_tokens: 512, do_sample: false, streamer })
-//console.log(output[0].generated_text.at(-1).content)
+const output = await generator(messages, { max_new_tokens: 512, do_sample: false, streamer })
+console.log(output[0].generated_text.at(-1).content)
 </script>
-
-<template>
-  <h1>Hello!</h1>
-  <ChatroomBox />
-</template>

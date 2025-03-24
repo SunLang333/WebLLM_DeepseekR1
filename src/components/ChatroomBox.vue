@@ -13,7 +13,10 @@
           placeholder="Your message here..."
           v-model="message"
           required
-        ></textarea>
+        >
+        <input :value="text" @input="onInput" placeholder="Type here">
+      </textarea
+        >
       </div>
       <div
         class="flex items-center justify-between px-3 py-2 border-t dark:border-gray-600 border-gray-200"
