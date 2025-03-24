@@ -5,9 +5,15 @@ let generator = null
 
 async function initializeGenerator() {
   if (!generator) {
-    generator = await pipeline('text-generation', 'Xenova/Phi-3-mini-4k-instruct', {
-      device: 'webgpu',
-    })
+    generator = await pipeline(
+      'text-generation',
+      //'Xenova/Phi-3-mini-4k-instruct',
+      'onnx-community/DeepSeek-R1-Distill-Qwen-1.5B-ONNX',
+      {
+        device: 'webgpu',
+        dtype: 'q4f16',
+      },
+    )
   }
   return generator
 }

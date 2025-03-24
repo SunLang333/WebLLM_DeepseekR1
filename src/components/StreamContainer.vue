@@ -11,7 +11,7 @@ const props = defineProps({
   prompt: { type: String, default: '' },
   loadOnly: { type: Boolean, default: false },
 })
-const emit = defineEmits(['stream-update', 'model-loaded', 'loading-progress'])
+const emit = defineEmits(['stream-update', 'model-loaded', 'loading-progress', 'finished'])
 
 const { loadGenerator, generate } = useTextGenerator()
 
@@ -46,6 +46,7 @@ if (!props.loadOnly) {
         emit('stream-update', partialText)
       })
       console.log('Finished Generating response.')
+      emit('finished')
     },
     { immediate: true },
   )
